@@ -8,8 +8,8 @@ import {
   PASSWORD_REGEX_ERROR,
 } from "../libs/constants";
 import db from "../libs/db";
-import getSession from "../libs/session";
 import { redirect } from "next/navigation";
+import loginUser from "../libs/login";
 
 const checkEmailExists = async (email: string) => {
   const user = await db.user.findUnique({
@@ -61,9 +61,7 @@ export async function login(prevState: any, formData: FormData) {
       user!.password ?? "xxxx"
     );
     if (ok) {
-      const session = await getSession();
-      session.id = user!.id;
-      await session.save();
+      await loginUser(user!.id);
       redirect("/profile");
     } else {
       return {

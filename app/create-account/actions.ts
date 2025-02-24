@@ -9,7 +9,7 @@ import {
 } from "../libs/constants";
 import db from "../libs/db";
 import { redirect } from "next/navigation";
-import getSession from "../libs/session";
+import loginUser from "../libs/login";
 
 const checkPasswords = ({
   password,
@@ -102,9 +102,7 @@ export async function createAccount(prevState: any, formData: FormData) {
         id: true,
       },
     });
-    const session = await getSession();
-    session.id = user.id;
-    await session.save();
+    await loginUser(user.id);
     redirect("/profile");
   }
 }
