@@ -1,10 +1,12 @@
 "use server";
 
+import twilio from "twilio";
 import crypto from "crypto";
 import { z } from "zod";
 import validator from "validator";
 import { redirect } from "next/navigation";
 import db from "../libs/db";
+import loginUser from "../libs/login";
 
 const phoneSchema = z
   .string()
@@ -14,7 +16,23 @@ const phoneSchema = z
     "Wrong phone format"
   );
 
-const tokenSchema = z.coerce.number().min(100000).max(999999);
+async function tokenExists(token: number) {
+  const exists = await db.sMSToken.findUnique({
+    where: {
+      token: token.toString(),
+    },
+    select: {
+      id: true,
+    },
+  });
+  return Boolean(exists);
+}
+
+const tokenSchema = z.coerce
+  .number()
+  .min(100000)
+  .max(999999)
+  .refine(tokenExists, "이 토큰은 존재하지 않습니다.");
 
 interface ActionState {
   token: boolean;
@@ -78,20 +96,47 @@ export async function smsLogin(prevState: ActionState, formData: FormData) {
         },
       });
       // 트윌리오 통해서 토큰 보내기
+      const client = twilio(
+        process.env.TWILIO_ACCOUNT_SID,
+        process.env.TWILIO_AUTH_TOKEN
+      );
+      await client.messages.create({
+        body: `your karrot verification code is: ${token} `,
+        from: process.env.MY_PHONE_NUMBER!,
+        // to: result.data // 원래는 이렇게 보내야 함.
+        to: process.env.MY_REAL_PHONE_NUMBER!,
+      });
       return {
         token: true,
       };
     }
   } else {
-    const result = tokenSchema.safeParse(token);
+    const result = await tokenSchema.spa(token);
     if (!result.success) {
       return {
         token: true,
         erorr: result.error.flatten(),
       };
     } else {
-      // login 해야하니깐 리다이렉트
-      redirect("/");
+      const token = await db.sMSToken.findUnique({
+        where: {
+          token: result.data.toString(),
+        },
+        select: {
+          id: true,
+          userId: true,
+        },
+      });
+
+      await loginUser(token!.userId);
+      await db.sMSToken.delete({
+        where: {
+          id: token!.id,
+        },
+      });
+
+      // 리다이렉트
+      redirect("/profile");
     }
   }
 }
