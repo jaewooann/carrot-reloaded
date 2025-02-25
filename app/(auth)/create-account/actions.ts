@@ -6,10 +6,10 @@ import {
   PASSWORD_MIN_LENGTH,
   PASSWORD_REGEX,
   PASSWORD_REGEX_ERROR,
-} from "../libs/constants";
-import db from "../libs/db";
+} from "@/app/libs/constants";
+import db from "@/app/libs/db";
 import { redirect } from "next/navigation";
-import loginUser from "../libs/login";
+import loginUser from "@/app/libs/login";
 
 const checkPasswords = ({
   password,

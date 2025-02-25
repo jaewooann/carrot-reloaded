@@ -5,8 +5,8 @@ import crypto from "crypto";
 import { z } from "zod";
 import validator from "validator";
 import { redirect } from "next/navigation";
-import db from "../libs/db";
-import loginUser from "../libs/login";
+import db from "@/app/libs/db";
+import loginUser from "@/app/libs/login";
 
 const phoneSchema = z
   .string()
