@@ -1,9 +1,27 @@
+import db from "@/app/libs/db";
+import ListProduct from "@/components/list-product";
 import React from "react";
 
-const Products = () => {
+async function getProducts() {
+  const products = await db.product.findMany({
+    select: {
+      title: true,
+      price: true,
+      created_at: true,
+      photo: true,
+      id: true,
+    },
+  });
+  return products;
+}
+
+const Products = async () => {
+  const products = await getProducts();
   return (
-    <div>
-      <h1 className="text-white text-4xl">Products!</h1>
+    <div className="p-5 flex flex-col gap-5">
+      {products.map((product) => (
+        <ListProduct key={product.id} {...product} />
+      ))}
     </div>
   );
 };
