@@ -6,10 +6,17 @@ import { PhotoIcon } from "@heroicons/react/24/solid";
 import React, { useState } from "react";
 import { uploadProduct } from "./actions";
 import { useFormState } from "react-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { productSchema, ProductType } from "./schema";
 
 export default function AddProduct() {
   const [preview, setPreview] = useState("");
   const [state, dispatch] = useFormState(uploadProduct, null);
+
+  const { register, handleSubmit } = useForm<ProductType>({
+    resolver: zodResolver(productSchema),
+  });
 
   const onImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const {
@@ -35,6 +42,7 @@ export default function AddProduct() {
     const url = URL.createObjectURL(file);
     setPreview(url);
   };
+
   return (
     <div>
       <form action={dispatch} className="p-5 flex flex-col gap-5">
@@ -63,24 +71,24 @@ export default function AddProduct() {
           className="hidden"
         />
         <Input
-          name="title"
           required
           placeholder="제목"
           type="text"
+          {...register("title")}
           errors={state?.fieldErrors.title}
         />
         <Input
-          name="price"
           required
           placeholder="가격"
           type="number"
+          {...register("price")}
           errors={state?.fieldErrors.price}
         />
         <Input
-          name="description"
           required
           placeholder="자세한 설명"
           type="text"
+          {...register("description")}
           errors={state?.fieldErrors.description}
         />
         <Button text="작성완료" />
