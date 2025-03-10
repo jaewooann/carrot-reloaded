@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import db from "@/app/libs/db";
 import ProductList from "@/components/product-list";
 import { PlusIcon } from "@heroicons/react/24/solid";
@@ -30,17 +31,19 @@ export type InitialProducts = Prisma.PromiseReturnType<
   typeof getInitialProducts
 >;
 
-const revalidate = async () => {
-  "use server";
-  revalidatePath("/home");
-};
-
 export const metadata = {
   title: "Home",
 };
 
+export const revalidate = 60;
+
 const Products = async () => {
-  const initialProducts = await getCahsedProducts();
+  const initialProducts = await getInitialProducts();
+  const revalidate = async () => {
+    "use server";
+    revalidatePath("/home");
+  };
+
   return (
     <div>
       <ProductList initialProcuts={initialProducts} />
