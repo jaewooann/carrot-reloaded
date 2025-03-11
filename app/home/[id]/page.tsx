@@ -82,7 +82,7 @@ export default async function ProductDetail({
         id,
       },
     });
-    redirect("/products");
+    redirect("/home");
   };
   return (
     <div>
@@ -138,6 +138,8 @@ export default async function ProductDetail({
     </div>
   );
 }
+
+// export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const products = await db.product.findMany({
