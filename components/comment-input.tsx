@@ -3,7 +3,7 @@
 import { useFormState } from "react-dom";
 import CommentButton from "./comment-button";
 import { uploadComment } from "@/app/posts/[id]/actions";
-import { Suspense, useOptimistic } from "react";
+import { Suspense, useOptimistic, useState } from "react";
 import Comments from "./comments";
 import { formatToTimeAgo } from "@/app/libs/utils";
 
@@ -33,6 +33,7 @@ export default function CommentInput({
   comments,
   user,
 }: CommentInputProps) {
+  const [commentText, setCommentText] = useState("");
   const [optimisticState, reducerFn] = useOptimistic(
     comments,
     (previousComment, payload: CommentProps) => [...previousComment, payload]
@@ -55,6 +56,9 @@ export default function CommentInput({
 
     reducerFn(newComment);
     formData.append("postId", postId + "");
+
+    setCommentText("");
+
     return uploadComment(_, formData);
   };
   console.log(optimisticState);
@@ -83,6 +87,8 @@ export default function CommentInput({
             className="col-span-4 text-black"
             type="text"
             name="comment"
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
             placeholder="댓글을 입력해 주세요."
           />
           <CommentButton />
