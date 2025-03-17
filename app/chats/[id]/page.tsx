@@ -3,6 +3,7 @@ import getSession from "@/app/libs/session";
 import ChatMessagesList from "@/components/chat-messages-list";
 import { Prisma } from "@prisma/client";
 import { notFound } from "next/navigation";
+import { maskMessageAsRead } from "./actions";
 
 async function getRoom(id: string) {
   const room = await db.chatRoom.findUnique({
@@ -41,6 +42,7 @@ async function getMessages(chatRoomId: string) {
       payload: true,
       created_at: true,
       userId: true,
+      isRead: true,
       user: {
         select: {
           avatar: true,
@@ -52,6 +54,20 @@ async function getMessages(chatRoomId: string) {
   return messages;
 }
 
+async function getUserProfile() {
+  const session = await getSession();
+  const user = await db.user.findUnique({
+    where: {
+      id: session.id!,
+    },
+    select: {
+      username: true,
+      avatar: true,
+    },
+  });
+  return user;
+}
+
 export type InitialChatMessages = Prisma.PromiseReturnType<typeof getMessages>;
 
 export default async function ChatRoom({ params }: { params: { id: string } }) {
@@ -60,12 +76,27 @@ export default async function ChatRoom({ params }: { params: { id: string } }) {
     return notFound();
   }
   const initialMessages = await getMessages(params.id);
+
+  // 초기값으로 들어가는거 채팅방 읽으면서 읽음으로 바꿔주기
+  const setReadMessages = initialMessages.map((message) => ({
+    ...message,
+    isRead: true,
+  }));
+  // db에 실제로 isRead:true 작업해주기
+  await maskMessageAsRead(params.id);
+
   const session = await getSession();
+  const user = await getUserProfile();
+  if (!user) {
+    return notFound();
+  }
   return (
     <ChatMessagesList
       chatRoomId={params.id}
       userId={session.id!}
-      initialMessages={initialMessages}
+      username={user.username}
+      avatar={user.avatar!}
+      initialMessages={setReadMessages}
     />
   );
 }

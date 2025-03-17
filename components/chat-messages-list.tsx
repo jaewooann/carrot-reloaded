@@ -1,5 +1,6 @@
 "use client";
 
+import { saveMessage } from "@/app/chats/[id]/actions";
 import { InitialChatMessages } from "@/app/chats/[id]/page";
 import { formatToTimeAgo } from "@/app/libs/utils";
 import { ArrowUpCircleIcon } from "@heroicons/react/24/solid";
@@ -15,12 +16,16 @@ interface ChatMessagesListProps {
   userId: number;
   initialMessages: InitialChatMessages;
   chatRoomId: string;
+  username: string;
+  avatar: string;
 }
 
 export default function ChatMessagesList({
   userId,
   initialMessages,
   chatRoomId,
+  username,
+  avatar,
 }: ChatMessagesListProps) {
   const [messages, setMessages] = useState(initialMessages);
   const [message, setMessage] = useState("");
@@ -33,7 +38,7 @@ export default function ChatMessagesList({
     setMessage(value);
   };
 
-  const onSubmit = (event: React.FormEvent) => {
+  const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setMessages((prevMsgs) => [
       ...prevMsgs,
@@ -42,17 +47,29 @@ export default function ChatMessagesList({
         payload: message,
         created_at: new Date(),
         userId,
+        isRead: false,
         user: {
-          username: "string",
-          avatar: "xxx",
+          username,
+          avatar,
         },
       },
     ]);
     channel.current?.send({
       type: "broadcast",
       event: "message",
-      payload: { message },
+      payload: {
+        id: Date.now(),
+        payload: message,
+        created_at: new Date(),
+        userId,
+        isRead: false,
+        user: {
+          username,
+          avatar,
+        },
+      },
     });
+    await saveMessage(message, chatRoomId);
     setMessage("");
   };
 
@@ -61,7 +78,7 @@ export default function ChatMessagesList({
     channel.current = client.channel(`room-${chatRoomId}`);
     channel.current
       .on("broadcast", { event: "message" }, (payload) => {
-        console.log(payload);
+        setMessages((prevMsgs) => [...prevMsgs, payload.payload]);
       })
       .subscribe();
 
@@ -79,7 +96,7 @@ export default function ChatMessagesList({
             message.userId === userId ? "justify-end" : ""
           }`}
         >
-          {/* {message.user.avatar ? (
+          {message.user.avatar ? (
             <Image
               src={message.user.avatar}
               alt={message.user.username}
@@ -91,7 +108,7 @@ export default function ChatMessagesList({
             <div className="size-8 rounded-full bg-gray-300 flex items-center justify-center">
               {message.user.username.charAt(0).toUpperCase()}
             </div>
-          )} */}
+          )}
           <div
             className={`flex flex-col gap-1 ${
               message.userId === userId ? "items-end" : ""
